@@ -33,6 +33,6 @@ script:
   - cd test
   - cmake .
   - make
-  - sde64 -nhm -- ./src/bin/hevcasm
-  - sde64 -hsw -- ./src/bin/hevcasm
+  - sde64 -nhm -- test-havoc
+  - sde64 -hsw -- test-havoc
 
