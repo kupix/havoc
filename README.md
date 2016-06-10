@@ -37,13 +37,6 @@ Download the CMake GUI for Windows and start it.  Enter your Havoc working copy'
 Click "Configure" and select your version of Visual Studio - be sure to select a "Win64" generator - and click Finish. Click "Generate" to create Visual Studio project and solution files that can be opened in your IDE.
 
 
-## API
-
-The following files form the project's API:
-* [havoc.h](src/lib/havoc.h) CPU capabilities flags and detection, library self-test function
-
-
-
 ## Just-in-Time assembler
 
 Havoc uses just-in-time assembler [Xbyak](https://github.com/herumi/xbyak), . This means that the executable code is assembled at runtime, just before it runs. JIT assembly has the following advantages:
