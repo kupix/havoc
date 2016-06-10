@@ -196,7 +196,7 @@ struct PredUniCopy
 
 	PredUniCopy(Jit::Buffer *buffer, int width)
 		:
-		Jit::Function(buffer, Jit::CountArguments<typename std::remove_pointer<HevcasmPredUni<Sample>>::type>::value),
+		Jit::Function(buffer, Jit::CountArguments<typename std::remove_pointer<HavocPredUni<Sample>>::type>::value),
 		width(width)
 	{
 		this->build();
@@ -896,7 +896,7 @@ bool legalWidth(int width)
 
 
 template <typename Sample>
-void havocPopulatePredUni(HevcasmTablePredUni<Sample> *table, havoc_code code)
+void havocPopulatePredUni(HavocTablePredUni<Sample> *table, havoc_code code)
 {
 	int const maxBitDepth = 6 + 2 * sizeof(Sample);
 
@@ -910,7 +910,7 @@ void havocPopulatePredUni(HevcasmTablePredUni<Sample> *table, havoc_code code)
 		}
 
 	auto &buffer = *reinterpret_cast<Jit::Buffer *>(code.implementation);
-	auto const n = Jit::CountArguments<typename std::remove_pointer<HevcasmPredUni<Sample>>::type>::value;
+	auto const n = Jit::CountArguments<typename std::remove_pointer<HavocPredUni<Sample>>::type>::value;
 
 	if (buffer.isa & HAVOC_C_REF)
 		for (int taps = 4; taps <= 8; taps += 4)
@@ -1034,14 +1034,14 @@ static int get_pred_uni(void *p, havoc_code code)
 
 	if (s->bitDepth > 8)
 	{
-		HevcasmTablePredUni<uint16_t> table;
+		HavocTablePredUni<uint16_t> table;
 		havocPopulatePredUni<uint16_t>(&table, code);
 		s->f16 = *havocGetPredUni<uint16_t>(&table, s->taps, s->w, s->h, s->xFrac, s->yFrac, s->bitDepth);
 		memset(s->dst16, 0, 2 * 64 * s->stride_dst);
 	}
 	else
 	{
-		HevcasmTablePredUni<uint8_t> table;
+		HavocTablePredUni<uint8_t> table;
 		havocPopulatePredUni<uint8_t>(&table, code);
 		s->f8 = *havocGetPredUni<uint8_t>(&table, s->taps, s->w, s->h, s->xFrac, s->yFrac, s->bitDepth);
 		memset(s->dst8, 0, 64 * s->stride_dst);
@@ -1247,7 +1247,7 @@ struct PredBi
 {
 	PredBi(Jit::Buffer *buffer, int width, int taps=0)
 		:
-		Jit::Function(buffer, Jit::CountArguments<HevcasmPredBi<uint8_t>>::value),
+		Jit::Function(buffer, Jit::CountArguments<HavocPredBi<uint8_t>>::value),
 		width(width),
 		taps(taps)
 	{
@@ -1828,7 +1828,7 @@ struct PredBi
 
 
 template <typename Sample>
-void havocPopulatePredBi(HevcasmTablePredBi<Sample> *table, havoc_code code)
+void havocPopulatePredBi(HavocTablePredBi<Sample> *table, havoc_code code)
 {
 	auto &buffer = *reinterpret_cast<Jit::Buffer *>(code.implementation);
 
@@ -1873,8 +1873,8 @@ void havocPopulatePredBi(HevcasmTablePredBi<Sample> *table, havoc_code code)
 
 typedef struct
 {
-	HevcasmPredBi<uint8_t> *f8;
-	HevcasmPredBi<uint16_t> *f16;
+	HavocPredBi<uint8_t> *f8;
+	HavocPredBi<uint16_t> *f16;
 	HAVOC_ALIGN(32, uint8_t, dst8[64 * STRIDE_DST]);
 	HAVOC_ALIGN(32, uint16_t, dst16[64 * STRIDE_DST]);
 	intptr_t stride_dst;
@@ -1902,14 +1902,14 @@ int init_pred_bi(void *p, havoc_code code)
 
 	if (s->bitDepth > 8)
 	{
-		HevcasmTablePredBi<uint16_t> table;
+		HavocTablePredBi<uint16_t> table;
 		havocPopulatePredBi<uint16_t>(&table, code);
 		s->f16 = *havocGetPredBi<uint16_t>(&table, s->taps, s->w, s->h, s->xFracA, s->yFracA, s->xFracB, s->yFracB, s->bitDepth);
 		memset(s->dst16, 0, 2 * 64 * s->stride_dst);
 	}
 	else
 	{
-		HevcasmTablePredBi<uint8_t> table;
+		HavocTablePredBi<uint8_t> table;
 		havocPopulatePredBi<uint8_t>(&table, code);
 		s->f8 = *havocGetPredBi<uint8_t>(&table, s->taps, s->w, s->h, s->xFracA, s->yFracA, s->xFracB, s->yFracB, s->bitDepth);
 		memset(s->dst8, 0, 64 * s->stride_dst);
