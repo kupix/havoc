@@ -2042,3 +2042,191 @@ void havoc_test_pred_bi(int *error_count, havoc_instruction_set mask)
 			test_partitions_bi(error_count, b, mask);
 		}
 }
+
+namespace havoc {
+
+template <typename Sample>
+void subtractBi_c_ref(Sample *dst, intptr_t stride_dst, const Sample *pred, intptr_t stride_pred, const Sample *src, intptr_t stride_src, int nPbW, int nPbH, int bitDepth)
+{
+	assert(bitDepth <= 8 * sizeof(Sample));
+
+	int const max = (1 << bitDepth) - 1;
+
+	for (int y = 0; y < nPbH; ++y)
+	{
+		for (int x = 0; x < nPbW; ++x)
+		{
+			int a = 2 * src[x + y * stride_src] - pred[x + y * stride_pred];
+			if (a < 0) a = 0;
+			if (a > max) a = max;
+			dst[x + y * stride_dst] = a;
+		}
+	}
+}
+
+template <typename Sample>
+void populateSubtractBi(TableSubtractBi<Sample> *table, havoc_code code, int bitDepth )
+{
+	auto &buffer = *reinterpret_cast<Jit::Buffer *>(code.implementation);
+
+	table->get() = 0;
+
+	if (buffer.isa & (HAVOC_C_REF | HAVOC_C_OPT))
+		table->get() = subtractBi_c_ref<Sample>;
+}
+
+template void populateSubtractBi<uint8_t>(TableSubtractBi<uint8_t> *table, havoc_code code, int bitDepth);
+template void populateSubtractBi<uint16_t>(TableSubtractBi<uint16_t> *table, havoc_code code, int bitDepth);
+
+
+struct BoundSubtractBiBase
+{
+	intptr_t stride_dst;
+	intptr_t stride_pred;
+	intptr_t stride_src;
+	int bitDepth;
+	int nPbW;
+	int nPbH;
+};
+
+template <typename Sample>
+struct BoundSubtractBi
+	:
+	BoundSubtractBiBase
+{
+	Sample *dst;
+	Sample *pred;
+	Sample *src;
+
+	SubtractBi<Sample> *f;
+
+	int init(havoc_code code)
+	{
+		TableSubtractBi<Sample> table;
+		populateSubtractBi(&table, code);
+		this->f = *table.get();
+
+		memset(this->dst, 0, 64 * this->stride_dst);
+
+		auto &buffer = *reinterpret_cast<Jit::Buffer *>(code.implementation);
+
+		if (this->f && buffer.isa == HAVOC_C_REF)
+		{
+			printf("\t%d-bit %dx%d: ", this->bitDepth, this->nPbW, this->nPbH);
+		}
+
+		return !!this->f;
+	}
+
+	void invoke(int n)
+	{
+		while (n--)
+			this->f(this->dst, this->stride_dst, this->pred, this->stride_pred, this->src, this->stride_src, this->nPbW, this->nPbH, this->bitDepth);
+	}
+
+	int mismatch(BoundSubtractBi *ref)
+	{
+		for (int y = 0; y < ref->nPbH; ++y)
+		{
+			if (memcmp(&ref->dst[y*ref->stride_dst], &this->dst[y*this->stride_dst], ref->nPbW * sizeof(Sample)))
+				return 1;
+		}
+		return 0;
+	}
+};
+
+int initSubtractBi(void *p, havoc_code code)
+{
+	auto *base = reinterpret_cast<BoundSubtractBiBase *>(p);
+	if (base->bitDepth == 8)
+	{
+		auto *s = static_cast<BoundSubtractBi<uint8_t> *>(base);
+		return s->init(code);
+	}
+	else
+	{
+		auto *s = static_cast<BoundSubtractBi<uint16_t> *>(base);
+		return s->init(code);
+	}
+}
+
+
+void invokeSubtractBi(void *p, int n)
+{
+	auto *base = reinterpret_cast<BoundSubtractBiBase *>(p);
+	if (base->bitDepth == 8)
+	{
+		auto *s = static_cast<BoundSubtractBi<uint8_t> *>(base);
+		s->invoke(n);
+	}
+	else
+	{
+		auto *s = static_cast<BoundSubtractBi<uint16_t> *>(base);
+		s->invoke(n);
+	}
+}
+
+
+int mismatchSubtractBi(void *boundRef, void *boundTest)
+{
+	auto *base = reinterpret_cast<BoundSubtractBiBase *>(boundRef);
+	if (base->bitDepth == 8)
+	{
+		auto *ref = static_cast<BoundSubtractBi<uint8_t> *>(boundRef);
+		auto *test = static_cast<BoundSubtractBi<uint8_t> *>(boundTest);
+		return test->mismatch(ref);
+	}
+	else
+	{
+		auto *ref = static_cast<BoundSubtractBi<uint16_t> *>(boundRef);
+		auto *test = static_cast<BoundSubtractBi<uint16_t> *>(boundTest);
+		return test->mismatch(ref);
+	}
+}
+
+
+
+template <typename Sample>
+void testSubtractBi(int *error_count, havoc_instruction_set mask)
+{
+	int constexpr bitDepth = 6 + 2 * sizeof(Sample);
+
+	printf("\nhavoc::SubtractBi %d-bit - Bireference subtraction (compute ideal second prediction)\n", bitDepth);
+
+	BoundSubtractBi<Sample> b[2];
+
+	size_t constexpr stride = 192;
+	HAVOC_ALIGN(32, Sample, src[64 * stride]);
+	HAVOC_ALIGN(32, Sample, pred[64 * stride]);
+	HAVOC_ALIGN(32, Sample, dst[64 * stride]);
+
+	for (int x = 0; x < 64 * stride; x++)
+	{
+		src[x] = rand() % (1 << bitDepth);
+		pred[x] = rand() % (1 << bitDepth);
+	}
+
+	b[0].bitDepth = bitDepth;
+	b[0].src = src;
+	b[0].pred = pred;
+	b[0].dst = dst;
+	b[0].stride_src = stride;
+	b[0].stride_pred = stride;
+	b[0].stride_dst = stride;
+
+	for (int log2 = 3; log2 <= 6; ++log2)
+	{
+		b[0].nPbW = 1 << log2;
+		b[0].nPbH = 1 << log2;
+
+		b[1] = b[0];
+
+		havoc_test(&b[0], &b[1], initSubtractBi, invokeSubtractBi, mismatchSubtractBi, mask, 1000);
+	}
+}
+
+template void testSubtractBi<uint8_t>(int *error_count, havoc_instruction_set mask);
+template void testSubtractBi<uint16_t>(int *error_count, havoc_instruction_set mask);
+
+
+}

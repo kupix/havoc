@@ -65,5 +65,29 @@ void havocPopulatePredBi(HavocTablePredBi<Sample> *table, havoc_code code);
 
 havoc_test_function havoc_test_pred_bi;
 
+// plan eventually to use havoc namespace for entire library
+namespace havoc {
+
+template <typename Sample>
+using SubtractBi = void(Sample *dst0, intptr_t stride_dst, const Sample *ref0, intptr_t stride_ref, const Sample *src, intptr_t stride_src, int nPbW, int nPbH, int bitDepth);
+
+template <typename Sample>
+struct TableSubtractBi
+{
+	SubtractBi<Sample>* p;
+	
+	SubtractBi<Sample>*& get()
+	{
+		return this->p;
+	}
+};
+
+template <typename Sample>
+void populateSubtractBi(TableSubtractBi<Sample> *table, havoc_code code, int bitDepth=0);
+
+template <typename Sample>
+void testSubtractBi(int *error_count, havoc_instruction_set mask);
+
+}
 
 #endif
