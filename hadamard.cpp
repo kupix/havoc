@@ -89,7 +89,7 @@ static int compute_satd_c_ref(const Sample *pA, intptr_t strideA, const Sample *
 #if USE_HM_DERIVED
 
 template <typename Sample>
-static int compute_sat_c_opt_2x2(const Sample *pA, intptr_t strideA, const Sample *pB, intptr_t strideB)
+static int compute_satd_c_opt_2x2(const Sample *pA, intptr_t strideA, const Sample *pB, intptr_t strideB)
 {
 	int satd = 0, diff[4], m[4];
 
@@ -115,7 +115,7 @@ static int compute_sat_c_opt_2x2(const Sample *pA, intptr_t strideA, const Sampl
 
 
 template <typename Sample>
-static int compute_sat_c_opt_4x4(const Sample *pA, intptr_t strideA, const Sample *pB, intptr_t strideB)
+static int compute_satd_c_opt_4x4(const Sample *pA, intptr_t strideA, const Sample *pB, intptr_t strideB)
 {
 	int k, satd = 0, diff[16], m[16], d[16];
 
@@ -214,7 +214,7 @@ static int compute_sat_c_opt_4x4(const Sample *pA, intptr_t strideA, const Sampl
 
 
 template <typename Sample>
-static int compute_sat_c_opt_8x8(const Sample *pA, intptr_t strideA, const Sample *pB, intptr_t strideB)
+static int compute_satd_c_opt_8x8(const Sample *pA, intptr_t strideA, const Sample *pB, intptr_t strideB)
 {
 	int k, i, j, jj, sad = 0;
 	int diff[64], m1[8][8], m2[8][8], m3[8][8];
@@ -713,17 +713,17 @@ void havoc_populate_hadamard_satd(havoc_table_hadamard_satd<Sample> *table, havo
 
 	if (buffer.isa & (HAVOC_C_REF | HAVOC_C_OPT))
 	{
-		*havoc_get_hadamard_satd(table, 1) = compute_sat_c_opt_2x2<Sample>;
-		*havoc_get_hadamard_satd(table, 2) = compute_sat_c_opt_4x4<Sample>;
-		*havoc_get_hadamard_satd(table, 3) = compute_sat_c_opt_8x8<Sample>;
+		*havoc_get_hadamard_satd(table, 1) = compute_satd_c_ref<2, Sample>;
+		*havoc_get_hadamard_satd(table, 2) = compute_satd_c_ref<4, Sample>;
+		*havoc_get_hadamard_satd(table, 3) = compute_satd_c_ref<8, Sample>;
 	}
 
 #if USE_HM_DERIVED
 	if (buffer.isa & HAVOC_C_OPT)
 	{
-		*havoc_get_hadamard_satd(table, 1) = compute_satd_c_ref<2, Sample>;
-		*havoc_get_hadamard_satd(table, 2) = compute_satd_c_ref<4, Sample>;
-		*havoc_get_hadamard_satd(table, 3) = compute_satd_c_ref<8, Sample>;
+		*havoc_get_hadamard_satd(table, 1) = compute_satd_c_opt_2x2<Sample>;
+		*havoc_get_hadamard_satd(table, 2) = compute_satd_c_opt_4x4<Sample>;
+		*havoc_get_hadamard_satd(table, 3) = compute_satd_c_opt_8x8<Sample>;
 	}
 #endif
 
