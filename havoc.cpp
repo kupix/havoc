@@ -145,7 +145,9 @@ int havoc_main(int argc, const char *argv[])
 	havoc_print_instruction_set_support(stdout, mask);
 
 	int error_count = 0;
-
+	
+	havoc::testSubtractBi<uint8_t>(&error_count, mask);
+	havoc::testSubtractBi<uint16_t>(&error_count, mask);
 	havoc_test_sad_multiref(&error_count, mask);
 	havoc_test_sad(&error_count, mask);
 	havoc_test_ssd(&error_count, mask);
@@ -165,4 +167,3 @@ int havoc_main(int argc, const char *argv[])
 
 	return error_count;
 }
-
