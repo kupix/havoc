@@ -12,7 +12,6 @@ cache:
     - $HOME/sde-external-7.31.0-2015-09-25-lin
 
 before_script:
-  - export CXX=g++-4.8 CC=gcc-4.8
   - cp get-intel-sde $HOME
   - pushd $HOME
   - if [ -f "sde-external-7.31.0-2015-09-25-lin/sde64" ]; then echo "using cached SDE"; fi
@@ -28,6 +27,6 @@ script:
   - cd build
   - cmake -DCMAKE_CXX_COMPILER=g++-5 -DCMAKE_C_COMPILER=gcc-5 ..
   - make
-#  - sde64 -nhm -- ./havoc
-#  - sde64 -hsw -- ./havoc
+  - sde64 -nhm -- ./havoc
+  - sde64 -hsw -- ./havoc
 
