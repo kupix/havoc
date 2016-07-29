@@ -50,7 +50,7 @@ add_executable(havoc-exe
 	main.cpp
 )
 
-SET_TARGET_PROPERTIES(havoc-exe PROPERTIES OUTPUT_NAME turing)
+SET_TARGET_PROPERTIES(havoc-exe PROPERTIES OUTPUT_NAME havoc)
 
 target_link_libraries(havoc-exe havoc)
 
