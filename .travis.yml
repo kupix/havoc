@@ -1,14 +1,11 @@
-language: c
-
-sudo: false
+language: generic
 
 addons:
   apt:
     sources:
       - ubuntu-toolchain-r-test
     packages:
-      - gcc-4.8
-      - g++-4.8
+      - g++-5
 
 cache:
   directories:
@@ -30,9 +27,10 @@ before_script:
   - popd
 
 script:
-  - cd test
-  - cmake .
+  - mkdir build
+  - cd build
+  - cmake -DCMAKE_CXX_COMPILER=g++-5 -DCMAKE_C_COMPILER=gcc-5 ..
   - make
-  - sde64 -nhm -- ./havoc
-  - sde64 -hsw -- ./havoc
+#  - sde64 -nhm -- ./havoc
+#  - sde64 -hsw -- ./havoc
 
