@@ -359,8 +359,8 @@ struct Satd4
                 Jit::Function
                 {
                     Satd4(Jit::Buffer *buffer)
-		        :
-		            Jit::Function(buffer, Jit::CountArguments<havoc_hadamard_satd<Sample>>::value)
+                :
+                    Jit::Function(buffer, Jit::CountArguments<havoc_hadamard_satd<Sample>>::value)
                     {
                         this->build();
                     }
@@ -512,8 +512,8 @@ struct Satd4
                                 Jit::Function
                                 {
                                     Satd8(Jit::Buffer *buffer)
-		        :
-		            Jit::Function(buffer, Jit::CountArguments<havoc_hadamard_satd<Sample>>::value)
+                :
+                    Jit::Function(buffer, Jit::CountArguments<havoc_hadamard_satd<Sample>>::value)
                                     {
                                         this->build();
                                     }
