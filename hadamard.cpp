@@ -836,23 +836,22 @@ struct Satd4
                                                 template <typename Sample>
                                                 void testHadamardSatd(int *error_count, havoc_instruction_set mask)
                                                 {
-                                                    Sample  srcA[16 * 8];
-                                                    Sample  srcB[16 * 8];
+                                                    auto constexpr bits = sizeof(Sample) == 2 ? 10 : 8;
+
+                                                    Sample srcA[16 * 8];
+                                                    Sample srcB[16 * 8];
 
                                                     for (int i = 0; i < 16 * 8; ++i)
                                                     {
-                                                        srcA[i] = rand() & 0xff;
-                                                        srcB[i] = rand() & 0xff;
+                                                        srcA[i] = (1 << bits) - 1 - (rand() & 7);
+                                                        srcB[i] = rand() & 7;
                                                     }
-
-                                                    srcA[0] = 16;
-                                                    srcA[1] = 32;
 
                                                     bound_hadamard_satd<Sample> b[2];
 
                                                     b[0].srcA = srcA;
                                                     b[0].srcB = srcB;
-                                                    b[0].bits = sizeof(Sample) == 2 ? 10 : 8;
+                                                    b[0].bits = bits;
 
                                                     for (b[0].log2TrafoSize = 3; b[0].log2TrafoSize >= 1; --b[0].log2TrafoSize)
                                                     {
